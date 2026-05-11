@@ -1,0 +1,12 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /commitment-note/
+
+    RewriteCond %{REQUEST_URI} !^/commitment-note/public/
+    RewriteRule ^(.*)$ public/index.php [L]
+</IfModule>
+
+
+admin@example.com
+
+password
