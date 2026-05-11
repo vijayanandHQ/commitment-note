@@ -10,17 +10,25 @@ class Medicine extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name',
-        'generic_name',
-        'brand_name',
-        'category',
-        'price',
-        'mrp',
-        'stock_quantity',
-        'supplier_id',
-        'status',
-        'description',
-    ];
+    'product_code',
+    'name',
+    'generic_name',
+    'generic_name_original',
+    'manufacturer',
+    'supplier_code',
+    'supplier_name',
+    'alt_supplier_codes',
+    'price',
+    'purchase_price',
+    'purchase_unit',
+    'sale_unit',
+    'stock_quantity',
+    'category',
+    'unit',
+    'expiry_date',
+    'description',
+    'is_active',
+];
 
     /**
      * Get the supplier that owns the medicine

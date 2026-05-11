@@ -2823,12 +2823,10 @@ if (statusField === 'returned_status' || statusField === 'delivered_status' || s
     foldBtn.title     = 'Hide this column and all columns to its left';
     foldBtn.innerHTML = '<i class="bx bx-left-arrow-alt" style="display: inline-block; width: 60px;"></i>';
     foldBtn.addEventListener('click', function (e) {
-        e.stopPropagation();
-        for (let j = 1; j <= i; j++) {
-            hiddenCols.add(j);
-        }
-        applyAllVisibility();
-    });
+    e.stopPropagation();
+    hiddenCols.add(i);
+    applyAllVisibility();
+});
     wrapper.appendChild(foldBtn);
 }
         });

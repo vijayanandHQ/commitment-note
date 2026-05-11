@@ -85,58 +85,46 @@ class MedicineController extends Controller
             ->orderBy('company_name')
             ->get(['id', 'company_name', 'name', 'supplier_code']);
         
-        return view('admin.medicines.create', compact('suppliers'));
+        return view('admin.medicines.create');
     }
 
     /**
      * Store a newly created medicine in storage.
      */
     public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'generic_name' => 'nullable|string|max:255',
-            'manufacturer' => 'nullable|string|max:255',
-            'price' => 'required|numeric|min:0',
-            'purchase_price' => 'nullable|numeric|min:0',
-            'stock_quantity' => 'required|integer|min:0',
-            'category' => 'nullable|string|max:255',
-            'unit' => 'nullable|string|max:50',
-            'expiry_date' => 'nullable|date',
-            'description' => 'nullable|string',
-            'product_code' => 'nullable|string|max:50|unique:medicines,product_code',
-            'supplier_id' => 'nullable|exists:suppliers,id',
-            'supplier_name' => 'nullable|string|max:255',
-            'supplier_code' => 'nullable|string|max:50',
-            'purchase_unit' => 'nullable|integer|min:1',
-            'sale_unit' => 'nullable|integer|min:1',
-            'alt_supplier_codes' => 'nullable|string',
-            'is_active' => 'sometimes|boolean',
-        ]);
+{
+    $validated = $request->validate([
+        'name'              => 'required|string|max:255',
+        'generic_name'      => 'nullable|string|max:255',
+        'generic_name_original' => 'nullable|string|max:255',
+        'manufacturer'      => 'nullable|string|max:255',
+        'price'             => 'required|numeric|min:0',
+        'purchase_price'    => 'nullable|numeric|min:0',
+        'stock_quantity'    => 'required|integer|min:0',
+        'category'          => 'nullable|string|max:255',
+        'unit'              => 'nullable|string|max:50',
+        'expiry_date'       => 'nullable|date',
+        'description'       => 'nullable|string',
+        'product_code'      => 'nullable|string|max:50|unique:medicines,product_code',
+        'supplier_name'     => 'nullable|string|max:255',
+        'supplier_code'     => 'nullable|string|max:50',
+        'purchase_unit'     => 'nullable|integer|min:1',
+        'sale_unit'         => 'nullable|integer|min:1',
+        'alt_supplier_codes'=> 'nullable|string',
+        'is_active'         => 'sometimes|boolean',
+    ]);
 
-        // If supplier is selected from dropdown, get supplier details
-        if (!empty($validated['supplier_id'])) {
-            $supplier = Supplier::find($validated['supplier_id']);
-            if ($supplier) {
-                $validated['supplier_name'] = $supplier->company_name ?: $supplier->name;
-                $validated['supplier_code'] = $supplier->supplier_code;
-            }
-        }
+    $validated['is_active'] = $request->has('is_active') ? 1 : 0;
 
-        // Set default values
-        $validated['is_active'] = $request->has('is_active') ? 1 : 1;
-        
-        // Generate product code if not provided
-        if (empty($validated['product_code'])) {
-            $validated['product_code'] = $this->generateProductCode();
-        }
-
-        Medicine::create($validated);
-
-        return redirect()->route('admin.medicines.index')
-                         ->with('success', 'Medicine added successfully!');
+    if (empty($validated['product_code'])) {
+        $validated['product_code'] = $this->generateProductCode();
     }
 
+    Medicine::create($validated);
+
+    return redirect()->route('admin.medicines.index')
+                     ->with('success', 'Medicine added successfully!');
+}
     /**
      * Display the specified medicine.
      */

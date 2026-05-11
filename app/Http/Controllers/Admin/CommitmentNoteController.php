@@ -49,28 +49,25 @@ class CommitmentNoteController extends Controller
 
     public function create()
 {
-    // Fetch recent commitments that have at least one product with (delivered_status = 1 OR returned_status = 1) AND ns_status = 1
+    // Show only products that are still pending (not delivered, not returned, not NS)
+    // i.e., delivered_status=1 AND returned_status=1 AND ns_status=1
     $recentCommitments = CommitmentNote::with(['products' => function($query) {
-            $query->where(function($q) {
-                $q->where('delivered_status', 1)
-                  ->orWhere('returned_status', 1)
-                  ->where('ns_status', 1);
-            })
-            ->with('supplier');
+            $query->where('delivered_status', 1)
+                  ->where('returned_status', 1)
+                  ->where('ns_status', 1)
+                  ->with('supplier');
         }])
         ->whereHas('products', function($query) {
-            $query->where(function($q) {
-                $q->where('delivered_status', 1)
-                  ->orWhere('returned_status', 1)
+            $query->where('delivered_status', 1)
+                  ->where('returned_status', 1)
                   ->where('ns_status', 1);
-            });
         })
         ->latest()
         ->limit(10)
         ->get();
+
     return view('admin.commitment-notes.create', compact('recentCommitments'));
 }
-
     public function allRecords()
     {
         $notes = CommitmentNote::latest()->get();
