@@ -58,6 +58,10 @@ Route::middleware(['auth'])->group(function () {
             // Route for supplier search suggestions
             Route::get('suppliers/search', [CommitmentNoteController::class, 'searchSuppliers'])->name('suppliers.search');
 
+            // NEW ROUTE
+Route::get('medicines/search-suppliers', [CommitmentNoteController::class, 'searchMedicineSuppliers'])
+    ->name('medicines.search-suppliers');
+
             // Route for updating dynamic product details (Order Qty, Supplier ID, Remarks)
             Route::post('commitment-notes-product/{id}/update-details', [CommitmentNoteController::class, 'updateProductDetails'])->name('commitment-notes-product.update-details');
 Route::post('commitment-notes-product/{id}/update-status', [CommitmentNoteController::class, 'updateProductStatus'])->name('commitment-notes-product.update-status');

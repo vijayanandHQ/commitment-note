@@ -46,7 +46,8 @@ class CommitmentNotesProduct extends Model
     }
 
     public function supplier()
-    {
-        return $this->belongsTo(Supplier::class, 'supplier_id');
-    }
+{
+    // Since supplier_id in this table is the ID of the medicines table
+    return $this->belongsTo(Medicine::class, 'supplier_id');
+}
 }

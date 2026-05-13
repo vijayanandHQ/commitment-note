@@ -103,6 +103,7 @@
                                                autocomplete="off"
                                                data-row="{{ $i }}">
                                         <input type="hidden" name="products[{{ $i }}][medicine_id]" class="medicine-id">
+                                        <input type="hidden" name="products[{{ $i }}][supplier_id]" class="supplier-id">
                                         <input type="hidden" name="products[{{ $i }}][mrp]" class="product-mrp">
                                         <input type="hidden" name="products[{{ $i }}][stock_qty]" class="product-qty">
                                         <input type="hidden" name="products[{{ $i }}][supplier_name]" class="supplier-name">
@@ -342,45 +343,48 @@
                                     </thead>
                                     <tbody id="recentCommitmentsBody">
                                         @foreach($recentCommitments as $note)
-                                        @php
-                                            $products     = $note->products;
-                                            $productCount = $products->count();
-                                            $totalQty     = $products->sum('quantity');
-                                            $totalPrice   = $products->sum('total_price');
-                                            $firstOrderQty  = $products->first()?->order_qty ?? 0;
-                                            $firstSupplier  = $products->first()?->supplier?->name ?? '';
-                                            $firstRemarks   = $products->first()?->remarks ?? '';
-                                            $totalOrderQty  = $products->sum('order_qty');
+@php
+    $products     = $note->products;
+    $productCount = $products->count();
+    $totalQty     = $products->sum('quantity');
+    $totalPrice   = $products->sum('total_price');
+    $firstOrderQty  = $products->first()?->order_qty ?? 0;
+    
+    // CHANGE HERE: Access the supplier_name through the relationship
+    $firstSupplier  = $products->first()?->supplier?->supplier_name ?? '';
+    
+    $firstRemarks   = $products->first()?->remarks ?? '';
+    $totalOrderQty  = $products->sum('order_qty');
 
-                                            $stageColors = [
-                                                'pending_supplier'       => ['bg' => 'warning',   'icon' => 'bx-time',        'text' => 'Pending'],
-                                                'received_from_supplier' => ['bg' => 'info',      'icon' => 'bx-package',     'text' => 'Received'],
-                                                'customer_contacted'     => ['bg' => 'primary',   'icon' => 'bx-phone-call',  'text' => 'Contacted'],
-                                                'delivered'              => ['bg' => 'success',   'icon' => 'bx-check-circle','text' => 'Delivered'],
-                                                'returned'               => ['bg' => 'danger',    'icon' => 'bx-undo',        'text' => 'Returned'],
-                                            ];
+    $stageColors = [
+        'pending_supplier'       => ['bg' => 'warning',   'icon' => 'bx-time',         'text' => 'Pending'],
+        'received_from_supplier' => ['bg' => 'info',      'icon' => 'bx-package',      'text' => 'Received'],
+        'customer_contacted'     => ['bg' => 'primary',   'icon' => 'bx-phone-call',  'text' => 'Contacted'],
+        'delivered'              => ['bg' => 'success',   'icon' => 'bx-check-circle','text' => 'Delivered'],
+        'returned'               => ['bg' => 'danger',    'icon' => 'bx-undo',         'text' => 'Returned'],
+    ];
 
-                                            $currentStage = $note->workflow_stage ?? 'pending_supplier';
-                                            $stageInfo    = $stageColors[$currentStage] ?? ['bg' => 'secondary', 'icon' => 'bx-question-mark', 'text' => 'Unknown'];
-                                        @endphp
-                                        <tr class="recent-note-row"
-                                        data-id="{{ $note->id }}"
-                                        data-name="{{ strtolower($note->cus_name ?? '') }}"
-                                        data-phone="{{ $note->customer_phone ?? '' }}"
-                                        data-date="{{ $note->delivery_date ? strtotime($note->delivery_date) : 0 }}"
-                                        data-type="{{ $note->delivery_type ?? '' }}"
-                                        data-stage="{{ $currentStage }}"
-                                        data-stage-text="{{ $stageInfo['text'] }}"
-                                        data-comments="{{ strtolower($note->comments ?? '') }}"
-                                        data-products-count="{{ $productCount }}"
-                                        data-qty="{{ $totalQty }}"
-                                        data-amount="{{ $totalPrice }}"
-                                        data-sno="{{ $note->id }}"
-                                        data-salesperson="{{ strtolower($note->sales_person_name ?? '') }}"
-                                        data-advance="{{ $note->advance_amount ?? 0 }}"
-                                        data-orderqty="{{ $totalOrderQty }}"
-                                        data-supplier="{{ strtolower($firstSupplier) }}"
-                                        data-remarks="{{ strtolower($firstRemarks) }}">
+    $currentStage = $note->workflow_stage ?? 'pending_supplier';
+    $stageInfo    = $stageColors[$currentStage] ?? ['bg' => 'secondary', 'icon' => 'bx-question-mark', 'text' => 'Unknown'];
+@endphp
+<tr class="recent-note-row"
+data-id="{{ $note->id }}"
+data-name="{{ strtolower($note->cus_name ?? '') }}"
+data-phone="{{ $note->customer_phone ?? '' }}"
+data-date="{{ $note->delivery_date ? strtotime($note->delivery_date) : 0 }}"
+data-type="{{ $note->delivery_type ?? '' }}"
+data-stage="{{ $currentStage }}"
+data-stage-text="{{ $stageInfo['text'] }}"
+data-comments="{{ strtolower($note->comments ?? '') }}"
+data-products-count="{{ $productCount }}"
+data-qty="{{ $totalQty }}"
+data-amount="{{ $totalPrice }}"
+data-sno="{{ $note->id }}"
+data-salesperson="{{ strtolower($note->sales_person_name ?? '') }}"
+data-advance="{{ $note->advance_amount ?? 0 }}"
+data-orderqty="{{ $totalOrderQty }}"
+data-supplier="{{ strtolower($firstSupplier) }}"
+data-remarks="{{ strtolower($firstRemarks) }}">
                                             
                                             <td class="sticky-col">{{ $note->cus_name }}</td>
                                             <td class="text-center fw-bold text-muted" style="font-family: 'JetBrains Mono', monospace; font-size: 12px;">
@@ -443,14 +447,38 @@
                                                         @foreach($products as $prod)
                                                             <div style="height: 38px;" class="d-flex align-items-center justify-content-center">
                                                                 <input type="number"
-                                                                       class="form-control form-control-sm text-center px-1 no-spinner open-update-tooltip"
-                                                                       style="width: 50px; height: 30px; font-size: 12px; border-color: #d9dee3; cursor: pointer;"
-                                                                       value="{{ $prod->order_qty ?? 0 }}" readonly
-                                                                       data-product-id="{{ $prod->id }}"
-                                                                       data-qty="{{ $prod->order_qty ?? 0 }}"
-                                                                       data-supplier-id="{{ $prod->supplier_id ?? '' }}"
-                                                                       data-supplier-name="{{ $prod->supplier->name ?? '' }}"
-                                                                       data-remarks="{{ $prod->remarks ?? '' }}">
+       class="form-control form-control-sm text-center px-1 no-spinner inline-order-qty"
+       style="width: 50px; height: 30px; font-size: 12px; border-color: #d9dee3;"
+       value="{{ $prod->order_qty ?? 0 }}"
+       data-product-id="{{ $prod->id }}"
+       data-original="{{ $prod->order_qty ?? 0 }}">
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                @endif
+                                            </td>
+
+                                            <td class="text-start position-relative">
+                                                @if($productCount > 0)
+                                                    <div class="d-flex flex-column gap-1">
+                                                        @foreach($products as $prod)
+                                                            <div style="min-height: 38px; height: auto;" class="d-flex align-items-center">
+    <div class="position-relative" style="width:140px;">
+        <textarea
+               class="form-control form-control-sm px-2 inline-supplier"
+               rows="1"
+               placeholder="Supplier..."
+               data-product-id="{{ $prod->id }}"
+               data-supplier-id="{{ $prod->supplier_id ?? '' }}"
+               autocomplete="off"
+                style="width:140px; min-height:30px; font-size:12px; resize:none; overflow:hidden; line-height:1.4; padding:4px 8px; box-shadow:none;">{{ $prod->supplier->supplier_name ?? '' }}</textarea>
+    <input type="hidden" class="inline-supplier-id" value="{{ $prod->supplier_id ?? '' }}">
+    <div class="inline-supplier-suggestions"
+         style="display:none; position:fixed; width:220px; background:#fff;
+                border:1.5px solid #4f46e5; border-radius:8px; z-index:2147483647;
+                max-height:180px; overflow-y:auto; box-shadow:0 4px 15px rgba(0,0,0,0.15);">
+    </div>
+</div>
                                                             </div>
                                                         @endforeach
                                                     </div>
@@ -463,54 +491,17 @@
                                                         @foreach($products as $prod)
                                                             <div style="height: 38px;" class="d-flex align-items-center">
                                                                 <input type="text"
-                                                                       class="form-control form-control-sm px-2 open-update-tooltip"
-                                                                       style="width: 140px; height: 30px; font-size: 12px; border-color: #d9dee3; cursor: pointer;"
-                                                                       value="{{ $prod->supplier->name ?? '' }}" readonly placeholder="Supplier..."
-                                                                       data-product-id="{{ $prod->id }}"
-                                                                       data-qty="{{ $prod->order_qty ?? 0 }}"
-                                                                       data-supplier-id="{{ $prod->supplier_id ?? '' }}"
-                                                                       data-supplier-name="{{ $prod->supplier->name ?? '' }}"
-                                                                       data-remarks="{{ $prod->remarks ?? '' }}">
-                                                            </div>
-                                                        @endforeach
-                                                    </div>
-                                                @endif
-                                            </td>
-
-                                            <td class="text-start position-relative">
-                                                @if($productCount > 0)
-                                                    <div class="d-flex flex-column gap-1">
-                                                        @foreach($products as $prod)
-                                                            <div style="height: 38px;" class="d-flex align-items-center">
-                                                                <input type="text"
-                                                                       class="form-control form-control-sm px-2 open-update-tooltip"
-                                                                       style="width: 150px; height: 30px; font-size: 11px; border-color: #d9dee3; cursor: pointer;"
-                                                                       value="{{ $prod->remarks ?? '' }}" readonly placeholder="Remarks..."
-                                                                       data-product-id="{{ $prod->id }}"
-                                                                       data-qty="{{ $prod->order_qty ?? 0 }}"
-                                                                       data-supplier-id="{{ $prod->supplier_id ?? '' }}"
-                                                                       data-supplier-name="{{ $prod->supplier->name ?? '' }}"
-                                                                       data-remarks="{{ $prod->remarks ?? '' }}">
+       class="form-control form-control-sm px-2 inline-remarks"
+       style="width: 150px; height: 30px; font-size: 11px; border-color: #d9dee3;"
+       value="{{ $prod->remarks ?? '' }}" placeholder="Remarks..."
+       data-product-id="{{ $prod->id }}"
+       data-original="{{ $prod->remarks ?? '' }}">
                                                             </div>
                                                         @endforeach
                                                     </div>
                                                 @endif
 
-                                                <div class="product-update-tooltip shadow-lg"
-                                                     style="display:none; position:fixed; z-index:99999; background:#fff; border:2px solid #696cff; border-radius:8px; padding:12px; min-width:480px;">
-                                                    <div class="d-flex gap-2 align-items-center">
-                                                        <input type="number" class="form-control form-control-sm t-qty no-spinner" placeholder="Qty" style="width:65px;">
-                                                        <div class="position-relative" style="flex:1;">
-                                                            <input type="text" class="form-control form-control-sm t-supplier" placeholder="Search Supplier...">
-                                                            <input type="hidden" class="t-supplier-id">
-                                                            <div class="supplier-suggestions shadow-sm border"
-                                                                 style="display:none; position:absolute; width:100%; background:#fff; z-index:100002; max-height:180px; overflow-y:auto;"></div>
-                                                        </div>
-                                                        <input type="text" class="form-control form-control-sm t-remarks" placeholder="Remarks" style="flex:1;">
-                                                        <button type="button" class="btn btn-primary btn-sm btn-update-row">Update</button>
-                                                    </div>
-                                                    <div class="update-msg mt-1 small" style="height:15px; font-weight: bold;"></div>
-                                                </div>
+                                                
                                             </td>
 
                                            <td class="text-center">
@@ -2036,6 +2027,38 @@ div[style*="width: 1px"][style*="height: 20px"] {
     background: linear-gradient(135deg, #0d9488, #0f766e) !important; 
     border-color: #115e59 !important;
     color: #fff !important;
+}
+
+/* Allow JS to override border color on inline editing fields */
+.inline-supplier,
+.inline-order-qty,
+.inline-remarks {
+    border-color: #d9dee3 !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+/* Green = saved — darker, more visible */
+.inline-supplier.changed,
+.inline-order-qty.changed,
+.inline-remarks.changed {
+    border-color: #15803d !important;
+    box-shadow: 0 0 0 2.5px rgba(21,128,61,0.25) !important;
+}
+
+/* Saving = amber */
+.inline-supplier.saving,
+.inline-order-qty.saving,
+.inline-remarks.saving {
+    border-color: #d97706 !important;
+    box-shadow: 0 0 0 2px rgba(217,119,6,0.20) !important;
+}
+
+/* Error = red */
+.inline-supplier.save-error,
+.inline-order-qty.save-error,
+.inline-remarks.save-error {
+    border-color: #b91c1c !important;
+    box-shadow: 0 0 0 2px rgba(185,28,28,0.20) !important;
 }
 </style>
 
@@ -3998,6 +4021,363 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     };
+
+})();
+</script>
+<script>
+(function () {
+    'use strict';
+
+    const BASE = '{{ url('/') }}';
+
+    // Auto-grow textarea height based on content
+    function autoGrowTextarea(el) {
+        el.style.height = 'auto';
+        el.style.height = el.scrollHeight + 'px';
+    }
+
+    function getCsrf() {
+        return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+            || document.querySelector('input[name="_token"]')?.value || '';
+    }
+
+    function saveProductUpdate(productId, payload, inputEl) {
+    // Remove inline style so CSS classes can take effect
+    inputEl.style.removeProperty('border-color');
+    inputEl.style.removeProperty('box-shadow');
+
+    inputEl.classList.remove('changed', 'save-error');
+    inputEl.classList.add('saving');
+
+    fetch(`${BASE}/admin/commitment-notes-product/${productId}/update-details`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': getCsrf(),
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(data => {
+        inputEl.classList.remove('saving');
+        inputEl.style.removeProperty('border-color');
+        inputEl.style.removeProperty('box-shadow');
+        if (data.success) {
+            inputEl.classList.add('changed');
+        } else {
+            inputEl.classList.add('save-error');
+            setTimeout(() => {
+                inputEl.classList.remove('save-error');
+                inputEl.style.removeProperty('border-color');
+            }, 2000);
+        }
+    })
+    .catch(() => {
+        inputEl.classList.remove('saving');
+        inputEl.classList.add('save-error');
+        inputEl.style.removeProperty('border-color');
+        setTimeout(() => {
+            inputEl.classList.remove('save-error');
+            inputEl.style.removeProperty('border-color');
+        }, 2000);
+    });
+}
+
+    function getSlotInputs(el) {
+        const productId = el.dataset.productId;
+        const tr = el.closest('tr');
+        const qtyInput      = tr.querySelector(`.inline-order-qty[data-product-id="${productId}"]`);
+        const supplierInput = tr.querySelector(`.inline-supplier[data-product-id="${productId}"]`);
+        const supplierIdEl  = supplierInput?.parentElement?.querySelector('.inline-supplier-id');
+        const remarksInput  = tr.querySelector(`.inline-remarks[data-product-id="${productId}"]`);
+        return { productId, qtyInput, supplierInput, supplierIdEl, remarksInput };
+    }
+
+    function getAllInlineFields() {
+        const fields = [];
+        document.querySelectorAll('.inline-order-qty').forEach(qtyEl => {
+            const pid = qtyEl.dataset.productId;
+            const tr = qtyEl.closest('tr');
+            const supplierEl = tr?.querySelector(`.inline-supplier[data-product-id="${pid}"]`);
+            const remarksEl  = tr?.querySelector(`.inline-remarks[data-product-id="${pid}"]`);
+            fields.push({ type: 'qty',      productId: pid, el: qtyEl });
+            if (supplierEl) fields.push({ type: 'supplier', productId: pid, el: supplierEl });
+            if (remarksEl)  fields.push({ type: 'remarks',  productId: pid, el: remarksEl });
+        });
+        return fields;
+    }
+
+    function autoSave(el) {
+        const { productId, qtyInput, supplierInput, supplierIdEl, remarksInput } = getSlotInputs(el);
+        if (!productId) return;
+
+        let targetSupplierId = supplierIdEl?.value;
+        if (supplierInput && supplierInput.value.trim() === '') {
+            targetSupplierId = '';
+        }
+
+        const payload = {
+            qty:         qtyInput?.value      || '0',
+            supplier_id: targetSupplierId     || '',
+            remarks:     remarksInput?.value  || ''
+        };
+        saveProductUpdate(productId, payload, el);
+    }
+
+    // ── Position supplier suggestion box using fixed coordinates ──
+    function positionSupplierBox(inputEl, box) {
+        const rect = inputEl.getBoundingClientRect();
+        const boxH = 180;
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const spaceAbove = rect.top;
+
+        let top, left;
+        left = rect.left;
+
+        // Prefer above if not enough space below
+        if (spaceBelow < boxH && spaceAbove > boxH) {
+            top = rect.top - boxH - 4;
+        } else {
+            top = rect.bottom + 4;
+        }
+
+        // Clamp horizontally
+        if (left + 220 > window.innerWidth - 8) {
+            left = window.innerWidth - 228;
+        }
+        if (left < 4) left = 4;
+
+        box.style.top  = top  + 'px';
+        box.style.left = left + 'px';
+    }
+
+    function setupSupplierAutocomplete(supplierInput) {
+        let timer;
+        let selectedFromDropdown = false; // track if user picked from dropdown
+        const box = supplierInput.parentElement?.querySelector('.inline-supplier-suggestions');
+        const hiddenId = supplierInput.parentElement?.querySelector('.inline-supplier-id');
+        if (!box) return;
+
+        // Store original value on focus
+        let originalValue = '';
+        let originalId    = '';
+
+        supplierInput.addEventListener('focus', function () {
+            originalValue = this.value;
+            originalId    = hiddenId ? hiddenId.value : '';
+            selectedFromDropdown = false;
+        });
+
+        // ── Arrow key navigation inside suggestion box ──
+        let highlightedIndex = -1;
+
+        supplierInput.addEventListener('keydown', function (e) {
+            const items = Array.from(box.querySelectorAll('.inline-sugg-item'));
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                highlightedIndex = Math.min(highlightedIndex + 1, items.length - 1);
+                updateHighlight(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                highlightedIndex = Math.max(highlightedIndex - 1, 0);
+                updateHighlight(items);
+            } else if (e.key === 'Enter') {
+                if (box.style.display !== 'none' && highlightedIndex >= 0 && items[highlightedIndex]) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const item = items[highlightedIndex];
+                    supplierInput.value = item.dataset.name;
+                    if (hiddenId) hiddenId.value = item.dataset.id;
+                    selectedFromDropdown = true;
+                    box.style.display = 'none';
+                    highlightedIndex = -1;
+                    // Mark border green immediately
+                    supplierInput.style.borderColor = '#22c55e';
+                    autoSave(supplierInput);
+
+                    // Move to next field
+                    const fields = getAllInlineFields();
+                    const idx = fields.findIndex(f => f.el === supplierInput);
+                    if (idx >= 0 && idx + 1 < fields.length) {
+                        fields[idx + 1].el.focus();
+                        if (fields[idx + 1].el.select) fields[idx + 1].el.select();
+                    }
+                    return;
+                }
+            } else if (e.key === 'Escape') {
+                box.style.display = 'none';
+                highlightedIndex = -1;
+            }
+        });
+
+        function updateHighlight(items) {
+            items.forEach((item, i) => {
+                if (i === highlightedIndex) {
+                    item.style.background = '#eef2ff';
+                    item.style.color = '#4f46e5';
+                    item.scrollIntoView({ block: 'nearest' });
+                } else {
+                    item.style.background = '#fff';
+                    item.style.color = '';
+                }
+            });
+        }
+
+        supplierInput.addEventListener('input', function () {
+            clearTimeout(timer);
+            selectedFromDropdown = false;
+            highlightedIndex = -1;
+            const q = this.value.trim();
+
+            if (q.length < 1) {
+                box.style.display = 'none';
+                return;
+            }
+
+            timer = setTimeout(() => {
+                fetch(`${BASE}/admin/medicines/search-suppliers?query=${encodeURIComponent(q)}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (!data.length) { box.style.display = 'none'; return; }
+
+                        box.innerHTML = data.map(s => `
+                            <div class="inline-sugg-item"
+                                 data-id="${s.id}" data-name="${s.name.replace(/"/g,'&quot;')}"
+                                 style="padding:7px 10px; cursor:pointer; font-size:12px;
+                                        border-bottom:1px solid #f1f5f9; background:#fff; color:#334155;">
+                                 ${s.name}
+                            </div>`).join('');
+
+                        positionSupplierBox(supplierInput, box);
+                        box.style.display = 'block';
+                        highlightedIndex = -1;
+
+                        box.querySelectorAll('.inline-sugg-item').forEach(item => {
+                            item.addEventListener('mouseover', function () {
+                                box.querySelectorAll('.inline-sugg-item').forEach(i => {
+                                    i.style.background = '#fff';
+                                    i.style.color = '#334155';
+                                });
+                                this.style.background = '#eef2ff';
+                                this.style.color = '#4f46e5';
+                                highlightedIndex = Array.from(box.querySelectorAll('.inline-sugg-item')).indexOf(this);
+                            });
+
+                            item.addEventListener('mousedown', function (e) {
+                                e.preventDefault();
+                                supplierInput.value       = this.dataset.name;
+                                if (hiddenId) hiddenId.value = this.dataset.id;
+                                selectedFromDropdown      = true;
+                                box.style.display         = 'none';
+                                highlightedIndex          = -1;
+                                // Green border = value changed
+                                supplierInput.style.borderColor = '#22c55e';
+                                autoSave(supplierInput);
+                            });
+                        });
+                    });
+            }, 220);
+        });
+
+        supplierInput.addEventListener('blur', function () {
+            setTimeout(() => {
+                box.style.display = 'none';
+                highlightedIndex  = -1;
+
+                // ── Fix: if user didn't pick from dropdown, restore original value ──
+                if (!selectedFromDropdown) {
+                    this.value = originalValue;
+                    if (hiddenId) hiddenId.value = originalId;
+                    // Don't save — revert silently
+                    this.style.borderColor = '#d9dee3';
+                } else {
+                    autoSave(this);
+                }
+            }, 200);
+        });
+    }
+
+    function setupEnterNavigation(el) {
+        el.addEventListener('keydown', function (e) {
+            if (e.key !== 'Enter') return;
+
+            if (el.classList.contains('inline-supplier')) {
+                const box = el.parentElement?.querySelector('.inline-supplier-suggestions');
+                if (box && box.style.display !== 'none') {
+                    // handled by supplier keydown above
+                    return;
+                }
+            }
+
+            e.preventDefault();
+
+            // Mark changed value with green border
+            const originalVal = el.dataset.original;
+            if (originalVal !== undefined && el.value !== originalVal) {
+                el.style.borderColor = '#22c55e';
+            }
+
+            autoSave(el);
+
+            const fields = getAllInlineFields();
+            const idx = fields.findIndex(f => f.el === el);
+            if (idx >= 0 && idx + 1 < fields.length) {
+                fields[idx + 1].el.focus();
+                if (fields[idx + 1].el.select) fields[idx + 1].el.select();
+            }
+        });
+    }
+
+    function setupBlurSave(el) {
+        el.addEventListener('blur', function () {
+            // Green border if changed from original
+            const originalVal = el.dataset.original;
+            if (originalVal !== undefined && el.value !== originalVal) {
+                el.style.borderColor = '#22c55e';
+            }
+            autoSave(el);
+        });
+    }
+
+   function initInlineEditing() {
+    document.querySelectorAll('.inline-order-qty').forEach(el => {
+        setupEnterNavigation(el);
+        setupBlurSave(el);
+    });
+
+    document.querySelectorAll('.inline-supplier').forEach(el => {
+        // Remove inline border-color so CSS class can control it
+        el.style.removeProperty('border-color');
+
+        // Auto-grow: must run after paint so scrollHeight is accurate
+        requestAnimationFrame(() => {
+            el.style.height = 'auto';
+            el.style.height = el.scrollHeight + 'px';
+        });
+        el.addEventListener('input', function() { autoGrowTextarea(this); });
+
+        setupSupplierAutocomplete(el);
+        setupEnterNavigation(el);
+    });
+
+    document.querySelectorAll('.inline-remarks').forEach(el => {
+        setupEnterNavigation(el);
+        setupBlurSave(el);
+    });
+}
+
+    document.addEventListener('DOMContentLoaded', initInlineEditing);
+    // Also run after full page load in case fonts/styles shift layout
+    window.addEventListener('load', function() {
+        document.querySelectorAll('.inline-supplier').forEach(el => {
+            el.style.height = 'auto';
+            el.style.height = el.scrollHeight + 'px';
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', initInlineEditing);
 
 })();
 </script>

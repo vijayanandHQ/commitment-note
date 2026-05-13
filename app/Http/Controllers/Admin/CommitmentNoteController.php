@@ -68,6 +68,25 @@ class CommitmentNoteController extends Controller
 
     return view('admin.commitment-notes.create', compact('recentCommitments'));
 }
+
+public function searchMedicineSuppliers(Request $request)
+{
+    $query = $request->get('query', '');
+    
+    $suppliers = \App\Models\Medicine::where('supplier_name', 'LIKE', "%{$query}%")
+        ->whereNotNull('supplier_name')
+        ->where('supplier_name', '!=', '')
+        ->select('id', 'supplier_name as name')  // ← use medicine.id directly
+        ->orderBy('supplier_name')
+        ->limit(10)
+        ->get()
+        ->map(function ($item) {
+            return ['id' => $item->id, 'name' => $item->name];
+        });
+
+    return response()->json($suppliers);
+}
+
     public function allRecords()
     {
         $notes = CommitmentNote::latest()->get();
@@ -167,18 +186,22 @@ class CommitmentNoteController extends Controller
         ]);
 
         foreach ($validProducts as $product) {
-            CommitmentNotesProduct::create([
-                'commitment_notes_id' => $commitmentNote->id,
-                'product_name'        => $product['product_name'],
-                'quantity'            => $product['quantity'],
-                'mrp'                 => $product['mrp'],
-                'total_price'         => $product['total_price'],
-                'received_status'     => 1,
-                'contacted_status'    => 1,
-                'delivered_status'    => 1,
-                'returned_status'     => 1,
-            ]);
-        }
+    // Find the medicine ID based on the name if the ID wasn't passed correctly
+    $medicine = \App\Models\Medicine::where('name', $product['product_name'])->first();
+
+    CommitmentNotesProduct::create([
+        'commitment_notes_id' => $commitmentNote->id,
+        'product_name'        => $product['product_name'],
+        'quantity'            => $product['quantity'],
+        'mrp'                 => $product['mrp'],
+        'total_price'         => $product['total_price'],
+        'supplier_id'         => $medicine ? $medicine->id : null, // Uses ID from medicines table
+        'received_status'     => 1,
+        'contacted_status'    => 1,
+        'delivered_status'    => 1,
+        'returned_status'     => 1,
+    ]);
+}
 
         return redirect()->route('admin.commitment-notes.create')
             ->with('success', count($validProducts) . ' product(s) saved successfully into commitment note #' . $commitmentNote->id);

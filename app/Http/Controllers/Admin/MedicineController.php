@@ -49,9 +49,8 @@ class MedicineController extends Controller
         $sortField = $request->get('sort', 'id');
         $sortDirection = $request->get('direction', 'desc');
         
-        // Allow sorting by these fields only
         $allowedSortFields = [
-            'id', 'product_code', 'name', 'generic_name', 'category', 
+            'id', 'product_code', 'name', 'generic_name', 'category',
             'supplier_name', 'supplier_code', 'price', 'purchase_price',
             'purchase_unit', 'sale_unit', 'stock_quantity', 'is_active', 'created_at'
         ];
@@ -64,7 +63,6 @@ class MedicineController extends Controller
 
         $medicines = $query->paginate(20)->withQueryString();
         
-        // Get unique categories for filter dropdown
         $categories = Medicine::select('category')
             ->distinct()
             ->whereNotNull('category')
@@ -231,7 +229,7 @@ class MedicineController extends Controller
         $sortDirection = $request->get('direction', 'desc');
         
         $allowedSortFields = [
-            'id', 'product_code', 'name', 'generic_name', 'category', 
+            'id', 'product_code', 'name', 'generic_name', 'category',
             'supplier_name', 'supplier_code', 'price', 'purchase_price',
             'purchase_unit', 'sale_unit', 'stock_quantity', 'is_active', 'created_at'
         ];
@@ -242,12 +240,25 @@ class MedicineController extends Controller
             $query->orderBy('id', 'desc');
         }
 
-        $medicines = $query->paginate(20)->withQueryString();
-        $categories = Medicine::select('category')->distinct()->whereNotNull('category')->pluck('category');
+        // ==================== FIX START ====================
+// Respect DataTables length menu (10, 20, 50, 100)
+$perPage = (int) $request->get('length', $request->get('per_page', 20));
+
+// Safety limits - prevent loading too many records at once
+$perPage = max(10, min($perPage, 200)); 
+// ==================== FIX END ====================
+
+        $medicines = $query->paginate($perPage)->withQueryString();
+
+        $categories = Medicine::select('category')
+            ->distinct()
+            ->whereNotNull('category')
+            ->where('category', '!=', '')
+            ->orderBy('category')
+            ->pluck('category');
 
         return view('admin.medicines.import', compact('medicines', 'categories', 'sortField', 'sortDirection'));
     }
-
     /**
      * Import medicines from Excel
      */
